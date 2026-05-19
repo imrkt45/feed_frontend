@@ -53,26 +53,48 @@ export default function HomePage() {
   const [pageSize, setPageSize] =
     useState<number>(5);
 
+  // RTK QUERY
   const {
     data,
-    isLoading,
+    currentData,
+    isFetching,
     refetch,
-  } = useGetFeedsQuery({
-    page: page + 1,
-    limit: pageSize,
-  });
+  } = useGetFeedsQuery(
+    {
+      page: page + 1,
+      limit: pageSize,
+    },
+    {
+      refetchOnMountOrArgChange: true,
 
+      refetchOnFocus: true,
+
+      refetchOnReconnect: true,
+    }
+  );
+
+  // KEEP OLD DATA WHILE FETCHING
   const feeds =
-    data?.feeds || [];
+    currentData?.feeds ||
+    data?.feeds ||
+    [];
 
   const totalCount =
-    data?.totalCount || 0;
+    currentData?.totalCount ||
+    data?.totalCount ||
+    0;
 
   // WEBSOCKET
   useEffect(() => {
     const ws = new WebSocket(
       "ws://localhost:5001"
     );
+
+    ws.onopen = () => {
+      console.log(
+        "WebSocket Connected"
+      );
+    };
 
     ws.onmessage = (
       event: MessageEvent
@@ -89,31 +111,44 @@ export default function HomePage() {
       }
     };
 
+    ws.onclose = () => {
+      console.log(
+        "WebSocket Closed"
+      );
+    };
+
     return () => {
       ws.close();
     };
   }, [refetch, page]);
 
+  // TABLE COLUMNS
   const columns: GridColDef[] =
     useMemo(
       () => [
         {
           field: "title",
+
           headerName: "Title",
+
           flex: 1,
         },
 
         {
           field: "description",
+
           headerName:
             "Description",
+
           flex: 2,
         },
 
         {
           field: "createdAt",
+
           headerName:
             "Created At",
+
           flex: 1.5,
 
           valueFormatter: (
@@ -141,6 +176,7 @@ export default function HomePage() {
         p: 5,
       }}
     >
+      {/* HEADER */}
       <Box
         display="flex"
         justifyContent="space-between"
@@ -174,9 +210,11 @@ export default function HomePage() {
         </Box>
       </Box>
 
+      {/* TABLE */}
       <Box
         sx={{
           height: 600,
+
           width: "100%",
 
           backgroundColor:
@@ -197,7 +235,7 @@ export default function HomePage() {
           getRowId={(row) =>
             row._id
           }
-          loading={isLoading}
+          loading={isFetching}
           pagination
           paginationMode="server"
           rowCount={totalCount}
