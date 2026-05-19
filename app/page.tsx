@@ -1,33 +1,16 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-  startTransition,
-} from "react";
+import { useEffect, useMemo, useState, startTransition } from "react";
 
 import Link from "next/link";
 
-import {
-  Box,
-  Typography,
-  Button,
-} from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 
-import {
-  useTheme,
-} from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 
-import {
-  DataGrid,
-  GridColDef,
-  GridPaginationModel,
-} from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridPaginationModel } from "@mui/x-data-grid";
 
-import {
-  useGetFeedsQuery,
-} from "./redux/api/api";
+import { useGetFeedsQuery } from "./redux/api/api";
 
 import ThemeToggle from "./components/ThemeToggle";
 
@@ -47,19 +30,12 @@ interface WebSocketMessage {
 export default function HomePage() {
   const theme = useTheme();
 
-  const [page, setPage] =
-    useState<number>(0);
+  const [page, setPage] = useState<number>(0);
 
-  const [pageSize, setPageSize] =
-    useState<number>(5);
+  const [pageSize, setPageSize] = useState<number>(5);
 
   // RTK QUERY
-  const {
-    data,
-    currentData,
-    isFetching,
-    refetch,
-  } = useGetFeedsQuery(
+  const { data, currentData, isFetching, refetch } = useGetFeedsQuery(
     {
       page: page + 1,
       limit: pageSize,
@@ -70,51 +46,33 @@ export default function HomePage() {
       refetchOnFocus: true,
 
       refetchOnReconnect: true,
-    }
+    },
   );
 
   // KEEP OLD DATA WHILE FETCHING
-  const feeds =
-    currentData?.feeds ||
-    data?.feeds ||
-    [];
+  const feeds = currentData?.feeds || data?.feeds || [];
+  console.log(currentData);
 
-  const totalCount =
-    currentData?.totalCount ||
-    data?.totalCount ||
-    0;
+  const totalCount = currentData?.totalCount || data?.totalCount || 0;
 
   // WEBSOCKET
   useEffect(() => {
-    const ws = new WebSocket(
-      "ws://localhost:5001"
-    );
+    const ws = new WebSocket("ws://localhost:5001");
 
     ws.onopen = () => {
-      console.log(
-        "WebSocket Connected"
-      );
+      console.log("WebSocket Connected");
     };
 
-    ws.onmessage = (
-      event: MessageEvent
-    ) => {
-      const message: WebSocketMessage =
-        JSON.parse(event.data);
+    ws.onmessage = (event: MessageEvent) => {
+      const message: WebSocketMessage = JSON.parse(event.data);
 
-      if (
-        message.type ===
-          "NEW_FEED" &&
-        page === 0
-      ) {
+      if (message.type === "NEW_FEED" && page === 0) {
         refetch();
       }
     };
 
     ws.onclose = () => {
-      console.log(
-        "WebSocket Closed"
-      );
+      console.log("WebSocket Closed");
     };
 
     return () => {
@@ -123,44 +81,36 @@ export default function HomePage() {
   }, [refetch, page]);
 
   // TABLE COLUMNS
-  const columns: GridColDef[] =
-    useMemo(
-      () => [
-        {
-          field: "title",
+  const columns: GridColDef[] = useMemo(
+    () => [
+      {
+        field: "title",
 
-          headerName: "Title",
+        headerName: "Title",
 
-          flex: 1,
-        },
+        flex: 1,
+      },
 
-        {
-          field: "description",
+      {
+        field: "description",
 
-          headerName:
-            "Description",
+        headerName: "Description",
 
-          flex: 2,
-        },
+        flex: 2,
+      },
 
-        {
-          field: "createdAt",
+      {
+        field: "createdAt",
 
-          headerName:
-            "Created At",
+        headerName: "Created At",
 
-          flex: 1.5,
+        flex: 1.5,
 
-          valueFormatter: (
-            value
-          ) =>
-            new Date(
-              value
-            ).toLocaleString(),
-        },
-      ],
-      []
-    );
+        valueFormatter: (value) => new Date(value).toLocaleString(),
+      },
+    ],
+    [],
+  );
 
   return (
     <Box
@@ -168,8 +118,7 @@ export default function HomePage() {
         minHeight: "100vh",
 
         background:
-          theme.palette.mode ===
-          "dark"
+          theme.palette.mode === "dark"
             ? "linear-gradient(to right, #141e30, #243b55)"
             : "linear-gradient(to right, #f5f7fa, #c3cfe2)",
 
@@ -185,27 +134,17 @@ export default function HomePage() {
       >
         <Typography
           variant="h4"
-          color={
-            theme.palette.mode ===
-            "dark"
-              ? "white"
-              : "black"
-          }
+          color={theme.palette.mode === "dark" ? "white" : "black"}
           fontWeight="bold"
         >
           Realtime Feeds
         </Typography>
 
-        <Box
-          display="flex"
-          gap={2}
-        >
+        <Box display="flex" gap={2}>
           <ThemeToggle />
 
           <Link href="/admin">
-            <Button variant="contained">
-              Go To Admin
-            </Button>
+            <Button variant="contained">Go To Admin</Button>
           </Link>
         </Box>
       </Box>
@@ -217,77 +156,55 @@ export default function HomePage() {
 
           width: "100%",
 
-          backgroundColor:
-            theme.palette.background
-              .paper,
+          backgroundColor: theme.palette.background.paper,
 
           borderRadius: 4,
 
           overflow: "hidden",
 
-          boxShadow:
-            "0px 10px 30px rgba(0,0,0,0.3)",
+          boxShadow: "0px 10px 30px rgba(0,0,0,0.3)",
         }}
       >
         <DataGrid
           rows={feeds}
           columns={columns}
-          getRowId={(row) =>
-            row._id
-          }
+          getRowId={(row) => row._id}
           loading={isFetching}
           pagination
           paginationMode="server"
           rowCount={totalCount}
-          pageSizeOptions={[
-            5,
-            10,
-            20,
-          ]}
+          pageSizeOptions={[5, 10, 20]}
           paginationModel={{
             page,
             pageSize,
           }}
-          onPaginationModelChange={(
-            model: GridPaginationModel
-          ) => {
+          onPaginationModelChange={(model: GridPaginationModel) => {
             startTransition(() => {
               setPage(model.page);
 
-              setPageSize(
-                model.pageSize
-              );
+              setPageSize(model.pageSize);
             });
           }}
           sx={{
             border: "none",
 
-            "& .MuiDataGrid-columnHeaders":
-              {
-                backgroundColor:
-                  theme.palette.mode ===
-                  "dark"
-                    ? "#1e293b"
-                    : "#f4f4f4",
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#1e293b" : "#f4f4f4",
 
-                fontSize: "16px",
+              fontSize: "16px",
 
-                fontWeight: "bold",
-              },
+              fontWeight: "bold",
+            },
 
-            "& .MuiDataGrid-cell":
-              {
-                fontSize: "14px",
-              },
+            "& .MuiDataGrid-cell": {
+              fontSize: "14px",
+            },
 
-            "& .MuiDataGrid-footerContainer":
-              {
-                backgroundColor:
-                  theme.palette.mode ===
-                  "dark"
-                    ? "#1e293b"
-                    : "#fafafa",
-              },
+            "& .MuiDataGrid-footerContainer": {
+              backgroundColor:
+                theme.palette.mode === "dark" ? "#1e293b" : "#fafafa",
+            },
           }}
         />
       </Box>
