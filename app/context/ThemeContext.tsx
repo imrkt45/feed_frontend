@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -44,16 +45,43 @@ export default function ThemeContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  // SAME SERVER + CLIENT INITIAL VALUE
   const [mode, setMode] = useState<
     "light" | "dark"
   >("dark");
 
+  // LOAD THEME AFTER MOUNT
+  useEffect(() => {
+    const savedTheme =
+      localStorage.getItem(
+        "theme"
+      ) as
+        | "light"
+        | "dark"
+        | null;
+
+    if (savedTheme) {
+      // DEFER STATE UPDATE
+      queueMicrotask(() => {
+        setMode(savedTheme);
+      });
+    }
+  }, []);
+
   const toggleTheme = () => {
-    setMode((prev) =>
-      prev === "dark"
-        ? "light"
-        : "dark"
-    );
+    setMode((prev) => {
+      const newMode =
+        prev === "dark"
+          ? "light"
+          : "dark";
+
+      localStorage.setItem(
+        "theme",
+        newMode
+      );
+
+      return newMode;
+    });
   };
 
   const theme = useMemo(
@@ -73,11 +101,6 @@ export default function ThemeContextProvider({
 
         shape: {
           borderRadius: 12,
-        },
-
-        typography: {
-          fontFamily:
-            "var(--font-geist-sans)",
         },
       }),
     [mode]
